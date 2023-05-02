@@ -20,7 +20,24 @@ sys.path.append(os.getcwd())
 from config import parse_arguments
 
 
-def load_molecules_for_energy(data_dir, dtype=torch.float32, val_ratio=.15, test_ratio=.15, batch_size=32):
+def load_molecules_for_bondtype(data_dir, savepath='.', dtype=torch.float32, val_ratio=.15, test_ratio=.15, batch_size=32):
+    struct = pd.read_csv(os.path.join(data_dir, 'structures.csv'))
+    train = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+
+    train = extract_distance(struct, train)
+    molecules, index2bond = create_graph_for_bondtype(struct, train, dtype=dtype)
+    tr_mol, val_mol, test_mol = split_dataset(molecules=molecules, val_ratio=val_ratio, test_ratio=test_ratio)
+    train_loader = create_dataloader(tr_mol, batch_size=batch_size)
+    val_loader = create_dataloader(val_mol, batch_size=batch_size)
+    test_loader = create_dataloader(test_mol, batch_size=batch_size)
+
+    with open(os.path.join(savepath, 'dataloaders_bondtype.pickle'), 'wb') as f:
+        pickle.dump([molecules, train_loader, val_loader, test_loader, index2bond], f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return train_loader, val_loader, test_loader, index2bond
+
+
+def load_molecules_for_energy(data_dir, savepath='.', dtype=torch.float32, val_ratio=.15, test_ratio=.15, batch_size=32):
     struct = pd.read_csv(os.path.join(data_dir, 'structures.csv'))
     train = pd.read_csv(os.path.join(data_dir, 'train.csv'))
     # test = pd.read_csv('kaggle-molecules/test.csv')
@@ -33,7 +50,7 @@ def load_molecules_for_energy(data_dir, dtype=torch.float32, val_ratio=.15, test
     val_loader = create_dataloader(val_mol, batch_size=batch_size)
     test_loader = create_dataloader(test_mol, batch_size=batch_size)
 
-    with open('dataloaders.pickle', 'wb') as f:
+    with open(os.path.join(savepath, 'dataloaders_energy.pickle'), 'wb') as f:
         pickle.dump([molecules, train_loader, val_loader, test_loader], f, protocol=pickle.HIGHEST_PROTOCOL)
 
     return train_loader, val_loader, test_loader
@@ -93,6 +110,33 @@ def create_graph_for_energy(struct, df, energy, dtype=torch.float32):
     return molecules
 
 
+def create_graph_for_bondtype(struct, df, dtype=torch.float32):
+
+    # feat_names = ['proton', 'neutron', 'mass', 'outer_electron', 'outer_electron_def', 'total_shell']
+    atom_features = {'C': [6, 6, 12, 4, 4, 2], 'H': [1, 0, 1, 1, 1, 1], 'N': [7, 7, 14, 5, 3, 1], 'O': [8, 8, 16, 6, 2, 1], 'F': [9, 10, 19, 7, 1, 1]}
+    bond_types = ['1JHC', '2JHH', '1JHN', '2JHN', '2JHC', '3JHH', '3JHC', '3JHN']
+    bond2index = {k: i for i, k in enumerate(bond_types)}
+    index2bond = {bond2index[k]: k for k in bond2index}
+    
+    # one hot encoding of bond types
+    _df = df.set_index('molecule_name').copy()
+    _df['std_scalar_coupling_constant'] = (_df['scalar_coupling_constant'] - _df['scalar_coupling_constant'].mean()) / _df['scalar_coupling_constant'].std()
+    
+    st = struct.sort_values(['molecule_name', 'atom_index']).set_index('molecule_name').copy()
+
+    # creating molecules
+    molecules = {}
+    for m in _df.index.unique():
+        mol = _df.loc[[m]]
+        edge_index = torch.tensor(mol[['atom_index_0', 'atom_index_1']].values.tolist() + mol[['atom_index_1', 'atom_index_0']].values.tolist()).t().contiguous()
+        edge_features = torch.tensor(mol[['distance', 'std_scalar_coupling_constant']].values, dtype=dtype).repeat((2, 1))
+        y = torch.tensor([bond2index[b] for b in mol['type']], dtype=torch.long).repeat(2)
+        features = torch.tensor([atom_features[a] for a in st.loc[m]['atom']], dtype=dtype)
+        molecules[m] = Data(x=features, edge_index=edge_index, y=y, edge_attr=edge_features)
+    
+    return molecules, index2bond
+
+
 def extract_distance(struct, df):
     dist = []
     _struct = struct.copy()
@@ -111,5 +155,9 @@ def extract_distance(struct, df):
 if __name__ == "__main__":
     args = parse_arguments(show=True)
     dtype = torch.float32
-    train_loader, val_loader, test_loader = load_molecules_for_energy(args.data_dir, dtype=dtype, val_ratio=args.val_ratio, test_ratio=args.test_ratio)
-    
+    if args.problem_type == 'energy-prediction':
+        train_loader, val_loader, test_loader = load_molecules_for_energy(args.data_dir, args.save_path, dtype=dtype, val_ratio=args.val_ratio, test_ratio=args.test_ratio)
+    elif args.problem_type == 'bond-prediction':
+        train_loader, val_loader, test_loader, index2bond = load_molecules_for_bondtype(args.data_dir, args.save_path, dtype=dtype, val_ratio=args.val_ratio, test_ratio=args.test_ratio)
+    else:
+        print('Problem-type not supported!')

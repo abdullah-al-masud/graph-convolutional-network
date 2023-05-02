@@ -13,7 +13,8 @@ def parse_arguments(show=False, jupyter=False):
     parser.add_argument('--data-dir', type=str, default='kaggle-molecules', help='path to the directory of the data')
     parser.add_argument('--val-ratio', type=float, default=.15, help='validation ratio for training')
     parser.add_argument('--test-ratio', type=float, default=.15, help='test data ratio for evaluation')
-    parser.add_argument('--problem-type', type=str, default='energy-prediction', help='what problem are we trying to run. Two options available. 1) energy prediction, 2) bond prediction')
+    parser.add_argument('--problem-type', type=str, default='energy-prediction',
+                        help='what problem are we trying to run. Two options available. 1) energy-prediction, 2) bond-prediction')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size for training')
     parser.add_argument('--learning-rate', type=float, default=.0001, help='learning rate for training')
     parser.add_argument('--epoch', type=int, default=100, help='number of epochs for training')

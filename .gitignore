@@ -1,3 +1,4 @@
 kaggle-molecules
 __pycache__
-dataloaders.pickle
+output_energy/dataloaders_energy.pickle
+output_bondtype/dataloaders_bondtype.pickle

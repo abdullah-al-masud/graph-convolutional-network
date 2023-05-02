@@ -203,13 +203,13 @@ class modified_Tmodel(modeling.torchModel):
 
 class Regressor(torch.nn.Module):
 
-    def __init__(self, node_features, edge_features):
+    def __init__(self, node_features, edge_features, units=32):
         super(Regressor, self).__init__()
 
-        self.build_model(node_features, edge_features)
+        self.build_model(node_features, edge_features, units=units)
     
 
-    def build_model(self, node_features, edge_features, units=32):
+    def build_model(self, node_features, edge_features, units=128):
         self.node_layer1 = pyg.nn.GATConv(node_features, units, egde_dim=edge_features)
         self.edge_layer1 = torch.nn.Linear(units * 2 + edge_features, units)
         self.node_layer2 = pyg.nn.GATConv(units, units, egde_dim=units)
@@ -228,30 +228,42 @@ class Regressor(torch.nn.Module):
 
         return prediction
 
-class Classifier(torch.nn.Module):
+class BondClassifier(torch.nn.Module):
 
-    def __init__(self, node_features, edge_features, classes):
-        super(Classifier, self).__init__()
+    def __init__(self, node_features, edge_features, classes, units=32):
+        super(BondClassifier, self).__init__()
 
-        self.build_model(node_features, edge_features, classes)
+        self.build_model(node_features, edge_features, classes, units=units)
     
 
-    def build_model(self, node_features, edge_features, classes):
-        self.node_layer1 = pyg.nn.GATConv(node_features, 32, egde_dim=edge_features)
-        self.edge_layer1 = torch.nn.Linear(node_features * 2 + edge_features, 32)
-        self.node_layer2 = pyg.nn.GATConv(32, 32, egde_dim=32)
-        self.edge_layer2 = torch.nn.Linear(32 * 2 + 32, 32)
-        self.classifier = torch.nn.Linear(32 * 2 + 32, classes)
+    def build_model(self, node_features, edge_features, classes, units=32):
+        self.node_layer1 = pyg.nn.GATConv(node_features, units, egde_dim=edge_features)
+        self.node_batchnorm1 = torch.nn.BatchNorm1d(units)
+        self.node_act1 = torch.nn.ReLU()
+        self.edge_layer1 = torch.nn.Linear(units * 2 + edge_features, units)
+        self.edge_batchnorm1 = torch.nn.BatchNorm1d(units)
+        self.edge_act1 = torch.nn.ReLU()
+        self.node_layer2 = pyg.nn.GATConv(units, units, egde_dim=units)
+        self.node_batchnorm2 = torch.nn.BatchNorm1d(units)
+        self.node_act2 = torch.nn.ReLU()
+        self.edge_layer2 = torch.nn.Linear(units * 2 + units, units)
+        self.edge_batchnorm2 = torch.nn.BatchNorm1d(units)
+        self.edge_act2 = torch.nn.ReLU()
+        self.out = torch.nn.Linear(units, classes)
 
     def forward(self, data):
 
         node_features, edge_index, edge_features = data.x, data.edge_index, data.edge_attr
 
         node_features = self.node_layer1(x=node_features, edge_index=edge_index, edge_attr=edge_features)
+        node_features = self.node_act1(self.node_batchnorm1(node_features))
         edge_features = self.edge_layer1(torch.cat([node_features[edge_index[0]], node_features[edge_index[1]], edge_features], axis=1))
+        edge_features = self.edge_act1(self.edge_batchnorm1(edge_features))
         node_features = self.node_layer2(x=node_features, edge_index=edge_index, edge_attr=edge_features)
+        node_features = self.node_act2(self.node_batchnorm2(node_features))
         edge_features = self.edge_layer2(torch.cat([node_features[edge_index[0]], node_features[edge_index[1]], edge_features], axis=1))
-        prediction = self.classifier(edge_features)
+        edge_features = self.edge_act2(self.edge_batchnorm2(edge_features))
+        prediction = self.out(edge_features)
 
         return prediction
 

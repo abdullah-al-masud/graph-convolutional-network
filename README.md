@@ -121,6 +121,9 @@ edge_index = torch.tensor(
      [0, 3], [3, 0],
      [0, 4], [4, 0]], dtype=torch.long)
 
+# calling continguous() is necessary here
+edge_index = edge_index.t().contiguous()
+
 # description of features
 # #proton, #neutron, atomic mass, charge, outer shell electrons
 x = torch.tensor(
@@ -132,6 +135,7 @@ x = torch.tensor(
 
 # lets assume edge feature is distance between two atoms
 # for 4 edges, we had to define 8 edge_index entries. So, similarly, we need to define 8 feature values with shape (8, 1).
+# We can repeat avialable 4 values to fulfill 8 values
 edge_feature = torch.tensor([[1.5, 2.4, 1.6, 1.3, 1.5, 2.4, 1.6, 1.5]]).T
 
 # label: lets imagine label is binary whether the molecule is organic or not. Methane is organic so 1

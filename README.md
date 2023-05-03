@@ -91,7 +91,7 @@ A few things are happening in this equation to process the features of node $X_i
 
 After processing the node features, we can also update the edge features using another fully connected layer for only edge feature processing. We can use updated node features here so that 
 
-$X_{ij} = FCN([X_i, X_j, X_{ij}])$ 
+$e_{ij} = FCN([X_i, X_j, e_{ij}])$ 
 
 So basically, we can concatenate updated node features of two ends of an edge and the old edge feature and then process them through a FCN layer.
 

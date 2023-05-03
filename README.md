@@ -1,4 +1,4 @@
-# Graph Convolutional Network using pytorch-geometric
+# Understanding Graph Convolutional Networks through examples
 
 Graph convolutional networks are in general known as message passing network. They are used generally in a graph G(V,E) where nodes or vertices are properly connected with each other and the connections are shown by node edges just like below figure.
 

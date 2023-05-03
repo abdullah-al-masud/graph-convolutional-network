@@ -40,9 +40,8 @@ A few things happening here all at once
   <p align="center">
     <img width="650" height="350" src="images/adjacency-matrix.png">
   </p>
-3. The Matrix D is degree matrix which is basically doing average operation to scale down the feature calculation. Its making the feature calculation robust against the effect of number of connected nodes. Otherwise, if one node is connected to just another node, its feature value would be lower than the node which is connected to multiple nodes.
-  
-  (Note: For simplicity, square root calculation of degree matrix was neglected)
+3. The Matrix D is degree matrix (diaginal matrix containing total presence of 1 in each row of adjacency matrix at the diagonal position of that row). If we multiply D^(-1/2).A.D^(-1/2) as shown in the equation, it will basically apply average operation to scale down the feature calculation. Its making the feature calculation robust against the effect of number of connected nodes. Otherwise, if one node is connected to just another node, its feature value would be lower than the node which is connected to multiple nodes.
+
   <p align="center">
     <img width="650" height="350" src="images/degree-matrix.png">
   </p>

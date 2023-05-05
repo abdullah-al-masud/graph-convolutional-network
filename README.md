@@ -104,7 +104,7 @@ In torch_geometric, the molecule methane (CH4) will be explained by a graph and 
 
 We can do it this way-
 - Lets define indices of the atoms as 0, 1, 2, 3, 4 for C, H1, H2, H3, H4 respectively
-- Define the edges in a 10x2 matrix (10x2 because for each edge, there will be 2 node indices and for undirected edge, we have to define it both way (i, j) and (j, i))
+- Define the edges in a 8x2 matrix (8x2 because for each edge, there will be 2 node indices and for undirected edge, we have to define it both way (i, j) and (j, i))
 - Define the features in a 5x5 matrix (5 atoms, 5 features)
 - Use torch_geometric.data.Data class for these definitions
 - Edge features can be defined in Data class object using argument 'edge_attr'

@@ -210,9 +210,9 @@ class Regressor(torch.nn.Module):
     
 
     def build_model(self, node_features, edge_features, units=128):
-        self.node_layer1 = pyg.nn.GATConv(node_features, units, egde_dim=edge_features)
+        self.node_layer1 = pyg.nn.GATConv(node_features, units, edge_dim=edge_features)
         self.edge_layer1 = torch.nn.Linear(units * 2 + edge_features, units)
-        self.node_layer2 = pyg.nn.GATConv(units, units, egde_dim=units)
+        self.node_layer2 = pyg.nn.GATConv(units, units, edge_dim=units)
         self.pool = pyg.nn.global_mean_pool
         self.out = torch.nn.Linear(units, 1)
 
@@ -237,13 +237,13 @@ class BondClassifier(torch.nn.Module):
     
 
     def build_model(self, node_features, edge_features, classes, units=32):
-        self.node_layer1 = pyg.nn.GATConv(node_features, units, egde_dim=edge_features)
+        self.node_layer1 = pyg.nn.GATConv(node_features, units, edge_dim=edge_features)
         self.node_batchnorm1 = torch.nn.BatchNorm1d(units)
         self.node_act1 = torch.nn.ReLU()
         self.edge_layer1 = torch.nn.Linear(units * 2 + edge_features, units)
         self.edge_batchnorm1 = torch.nn.BatchNorm1d(units)
         self.edge_act1 = torch.nn.ReLU()
-        self.node_layer2 = pyg.nn.GATConv(units, units, egde_dim=units)
+        self.node_layer2 = pyg.nn.GATConv(units, units, edge_dim=units)
         self.node_batchnorm2 = torch.nn.BatchNorm1d(units)
         self.node_act2 = torch.nn.ReLU()
         self.edge_layer2 = torch.nn.Linear(units * 2 + units, units)
